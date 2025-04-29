@@ -1,20 +1,21 @@
 {
-	"name": "ob-integration-adapters",
-	"module": "index.ts",
-	"type": "module",
-	"private": true,
-	"scripts": {
-		"lint": "biome check",
-		"check": "tsc"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "1.9.4",
-		"@types/bun": "latest"
-	},
-	"peerDependencies": {
-		"typescript": "^5"
-	},
-	"dependencies": {
-		"viem": "^2.28.0"
-	}
+  "name": "ob-integration-adapters",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "biome check",
+    "check": "tsc"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@pythnetwork/pyth-evm-js": "^1.83.0",
+    "viem": "^2.28.0"
+  }
 }

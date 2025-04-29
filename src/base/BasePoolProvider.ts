@@ -1,5 +1,6 @@
 import type {
 	Abi,
+	Address,
 	PublicClient,
 	WatchContractEventOnLogsParameter,
 } from "viem";
@@ -58,7 +59,7 @@ export abstract class BasePoolStateProvider<TPool extends BasePoolState> {
 	 * - if a new pool is found, then add it to this.pools
 	 */
 	abstract handleEvent(
-		log: WatchContractEventOnLogsParameter<typeof this.abi>[number],
+		log: WatchContractEventOnLogsParameter<typeof this.abi>[number]
 	): Promise<void>;
 
 	/**
@@ -66,5 +67,12 @@ export abstract class BasePoolStateProvider<TPool extends BasePoolState> {
 	 * It should use the `client` to make a transaction on-chain
 	 * This method will be used as a reference. In practise, this will be implemented in the OBRouter
 	 */
-	abstract swap(pool: TPool, amountIn: bigint): Promise<void>;
+	abstract swap(
+		pool: TPool,
+		amountIn: bigint,
+		zeroToOne: boolean,
+		to?: Address,
+		amountOutMin?: bigint,
+		deadline?: bigint
+	): Promise<void>;
 }
