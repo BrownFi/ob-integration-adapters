@@ -2,8 +2,8 @@ import { EvmPriceServiceConnection } from "@pythnetwork/pyth-evm-js";
 import {
 	type Address,
 	type WatchContractEventOnLogsParameter,
-	zeroAddress,
 	encodePacked,
+	zeroAddress,
 } from "viem";
 import { BasePoolStateProvider } from "../../base/BasePoolProvider";
 import type { BrownFiV2PoolState } from "./BrownFiV2PoolState";
@@ -131,7 +131,7 @@ export class BrownFiV2PoolProvider extends BasePoolStateProvider<BrownFiV2PoolSt
 			price0: 0n,
 			price1: 0n,
 			updateFee: 0n,
-			updateFeedData: "0x"
+			updateFeedData: "0x",
 		};
 	}
 
@@ -213,19 +213,19 @@ export class BrownFiV2PoolProvider extends BasePoolStateProvider<BrownFiV2PoolSt
 
 		if (!priceFeedIds.length) return;
 
-		pool.price0 = await this.client.readContract({
+		pool.price0 = (await this.client.readContract({
 			address: FACTORY_V2_ADDRESS,
 			abi: this.abi,
 			functionName: "priceOf",
 			args: [pool.token0, 60n],
-		}) as bigint;
+		})) as bigint;
 
-		pool.price1 = await this.client.readContract({
+		pool.price1 = (await this.client.readContract({
 			address: FACTORY_V2_ADDRESS,
 			abi: this.abi,
 			functionName: "priceOf",
 			args: [pool.token1, 60n],
-		}) as bigint;
+		})) as bigint;
 
 		// Create connection to Pyth price service
 		const pythConn = new EvmPriceServiceConnection(
@@ -244,10 +244,7 @@ export class BrownFiV2PoolProvider extends BasePoolStateProvider<BrownFiV2PoolSt
 		});
 
 		pool.updateFee = updateFee;
-		pool.updateFeedData = encodePacked(
-			['bytes[]'],
-			[priceFeedUpdateData],
-		)
+		pool.updateFeedData = encodePacked(["bytes[]"], [priceFeedUpdateData]);
 
 		this.pools.set(poolAddress, pool);
 	}

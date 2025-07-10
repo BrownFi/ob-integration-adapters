@@ -23,7 +23,7 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 		const [reserveIn, reserveOut] = zeroToOne
 			? [pool.reserve0, pool.reserve1]
 			: [pool.reserve1, pool.reserve0];
-		
+
 		const [tokenInDecimals, tokenOutDecimals] = zeroToOne
 			? [pool.token0Decimals, pool.token1Decimals]
 			: [pool.token1Decimals, pool.token0Decimals];
@@ -32,8 +32,14 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 			throw new Error("BrownFiV2Library: INSUFFICIENT_LIQUIDITY");
 
 		// Parse raw amounts to default decimals (18)
-		const parsedAmountIn = this.parseRawToDefaultDecimals(tokenInDecimals, amountIn);
-		const parsedReserveOut = this.parseRawToDefaultDecimals(tokenOutDecimals, reserveOut);
+		const parsedAmountIn = this.parseRawToDefaultDecimals(
+			tokenInDecimals,
+			amountIn,
+		);
+		const parsedReserveOut = this.parseRawToDefaultDecimals(
+			tokenOutDecimals,
+			reserveOut,
+		);
 
 		// Get prices with skewness adjustment
 		const [priceIn, priceOut] = this.getSkewnessPrice(
@@ -41,11 +47,15 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 			zeroToOne ? pool.price1 : pool.price0,
 			this.parseRawToDefaultDecimals(pool.token0Decimals, pool.reserve0),
 			this.parseRawToDefaultDecimals(pool.token1Decimals, pool.reserve1),
-			pool.lambda
+			pool.lambda,
 		);
 
 		// Apply fee to amount in
-		const _amountIn = this.mulDiv(parsedAmountIn, this.PRECISION, this.PRECISION + BigInt(pool.fee));
+		const _amountIn = this.mulDiv(
+			parsedAmountIn,
+			this.PRECISION,
+			this.PRECISION + BigInt(pool.fee),
+		);
 
 		let amountOut: bigint;
 
@@ -54,14 +64,34 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 			amountOut = this.mulDiv(
 				parsedReserveOut * _amountIn,
 				priceIn,
-				priceOut * parsedReserveOut + _amountIn * priceIn
+				priceOut * parsedReserveOut + _amountIn * priceIn,
 			);
 		} else {
 			// Complex formula using square root
-			const leftNumerator = this.computeLeftNumerator(_amountIn, priceIn, priceOut, parsedReserveOut);
-			const leftSqrt = this.computeLeftSqrt(_amountIn, priceIn, priceOut, parsedReserveOut);
-			const rightSqrt = this.computeRightSqrt(_amountIn, priceIn, priceOut, parsedReserveOut, pool.kappa);
-			const denominator = this.mulDiv(priceOut, 2n * this.Q64 - pool.kappa, this.Q64);
+			const leftNumerator = this.computeLeftNumerator(
+				_amountIn,
+				priceIn,
+				priceOut,
+				parsedReserveOut,
+			);
+			const leftSqrt = this.computeLeftSqrt(
+				_amountIn,
+				priceIn,
+				priceOut,
+				parsedReserveOut,
+			);
+			const rightSqrt = this.computeRightSqrt(
+				_amountIn,
+				priceIn,
+				priceOut,
+				parsedReserveOut,
+				pool.kappa,
+			);
+			const denominator = this.mulDiv(
+				priceOut,
+				2n * this.Q64 - pool.kappa,
+				this.Q64,
+			);
 
 			const sqrtTerm = this.sqrt(leftSqrt + rightSqrt);
 			amountOut = (leftNumerator - this.Q64 * sqrtTerm) / denominator;
@@ -87,22 +117,28 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 		const [reserveIn, reserveOut] = zeroToOne
 			? [pool.reserve0, pool.reserve1]
 			: [pool.reserve1, pool.reserve0];
-		
+
 		const [tokenInDecimals, tokenOutDecimals] = zeroToOne
 			? [pool.token0Decimals, pool.token1Decimals]
 			: [pool.token1Decimals, pool.token0Decimals];
 
 		if (reserveOut <= 0n)
 			throw new Error("BrownFiV2Library: INSUFFICIENT_LIQUIDITY");
-		
+
 		// Check max 80% of reserve constraint
 		if (amountOut * 10n >= reserveOut * 8n) {
 			throw new Error("BrownFiV2Library: MAX_80_PERCENT_OF_RESERVE");
 		}
 
 		// Parse to default decimals
-		const parsedAmountOut = this.parseRawToDefaultDecimals(tokenOutDecimals, amountOut);
-		const parsedReserveOut = this.parseRawToDefaultDecimals(tokenOutDecimals, reserveOut);
+		const parsedAmountOut = this.parseRawToDefaultDecimals(
+			tokenOutDecimals,
+			amountOut,
+		);
+		const parsedReserveOut = this.parseRawToDefaultDecimals(
+			tokenOutDecimals,
+			reserveOut,
+		);
 
 		// Get prices with skewness adjustment
 		const [priceIn, priceOut] = this.getSkewnessPrice(
@@ -110,25 +146,29 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 			zeroToOne ? pool.price1 : pool.price0,
 			this.parseRawToDefaultDecimals(pool.token0Decimals, pool.reserve0),
 			this.parseRawToDefaultDecimals(pool.token1Decimals, pool.reserve1),
-			pool.lambda
+			pool.lambda,
 		);
 
 		// Calculate price impact: R = (K * dx) / (x - dx)
 		const priceImpact = this.mulDiv(
 			pool.kappa * this.Q64,
 			parsedAmountOut,
-			this.Q64 * (parsedReserveOut - parsedAmountOut)
+			this.Q64 * (parsedReserveOut - parsedAmountOut),
 		);
 
 		// Calculate amount in based on price impact
 		let amountIn = this.mulDiv(
 			parsedAmountOut,
 			this.mulDiv(priceOut, priceImpact + this.Q64 * 2n, priceIn),
-			this.Q64 * 2n
+			this.Q64 * 2n,
 		);
 
 		// Apply fee
-		amountIn = this.mulDiv(amountIn, this.PRECISION + BigInt(pool.fee), this.PRECISION);
+		amountIn = this.mulDiv(
+			amountIn,
+			this.PRECISION + BigInt(pool.fee),
+			this.PRECISION,
+		);
 
 		// Parse default decimals to raw
 		return this.parseDefaultDecimalsToRaw(tokenInDecimals, amountIn);
@@ -144,14 +184,12 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 			pool.price1,
 			this.parseRawToDefaultDecimals(pool.token0Decimals, pool.reserve0),
 			this.parseRawToDefaultDecimals(pool.token1Decimals, pool.reserve1),
-			pool.lambda
+			pool.lambda,
 		);
 
-		if (zeroToOne) {
-			return Number(price0) / Number(price1);
-		} else {
-			return Number(price1) / Number(price0);
-		}
+		return zeroToOne
+			? Number(price0) / Number(price1)
+			: Number(price1) / Number(price0);
 	}
 
 	// Helper function to mimic FullMath.mulDiv with bigint
@@ -172,19 +210,25 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 	}
 
 	// Helper function to convert raw amount to default decimals amount
-	private parseRawToDefaultDecimals(tokenDecimals: number, amount: bigint): bigint {
+	private parseRawToDefaultDecimals(
+		tokenDecimals: number,
+		amount: bigint,
+	): bigint {
 		const tokenDecimalsBig = BigInt(tokenDecimals);
-		return tokenDecimalsBig > this.DECIMALS 
-			? amount / (10n ** (tokenDecimalsBig - this.DECIMALS))
-			: amount * (10n ** (this.DECIMALS - tokenDecimalsBig));
+		return tokenDecimalsBig > this.DECIMALS
+			? amount / 10n ** (tokenDecimalsBig - this.DECIMALS)
+			: amount * 10n ** (this.DECIMALS - tokenDecimalsBig);
 	}
 
 	// Helper function to convert default decimals amount to raw amount
-	private parseDefaultDecimalsToRaw(tokenDecimals: number, amount: bigint): bigint {
+	private parseDefaultDecimalsToRaw(
+		tokenDecimals: number,
+		amount: bigint,
+	): bigint {
 		const tokenDecimalsBig = BigInt(tokenDecimals);
-		return tokenDecimalsBig > this.DECIMALS 
-			? amount * (10n ** (tokenDecimalsBig - this.DECIMALS))
-			: amount / (10n ** (this.DECIMALS - tokenDecimalsBig));
+		return tokenDecimalsBig > this.DECIMALS
+			? amount * 10n ** (tokenDecimalsBig - this.DECIMALS)
+			: amount / 10n ** (this.DECIMALS - tokenDecimalsBig);
 	}
 
 	// Helper function to get skewness-adjusted prices
@@ -193,7 +237,7 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 		priceB: bigint,
 		reserveA: bigint,
 		reserveB: bigint,
-		lambda: bigint
+		lambda: bigint,
 	): [bigint, bigint] {
 		if (lambda === 0n) {
 			return [priceA, priceB];
@@ -202,26 +246,25 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 		const reserveAPrice = reserveA * priceA;
 		const reserveBPrice = reserveB * priceB;
 
-		const reservePriceDiff = reserveAPrice >= reserveBPrice 
-			? reserveAPrice - reserveBPrice 
-			: reserveBPrice - reserveAPrice;
+		const reservePriceDiff =
+			reserveAPrice >= reserveBPrice
+				? reserveAPrice - reserveBPrice
+				: reserveBPrice - reserveAPrice;
 		const reservePriceSum = reserveAPrice + reserveBPrice;
 		const s = this.mulDiv(reservePriceDiff, lambda, reservePriceSum);
 
 		const q64PlusS = this.Q64 + s;
 		const q64MinusS = this.Q64 - s;
 
-		if (reserveAPrice >= reserveBPrice) {
-			return [
-				this.mulDiv(priceA, q64MinusS, this.Q64),
-				this.mulDiv(priceB, q64PlusS, this.Q64)
-			];
-		} else {
-			return [
-				this.mulDiv(priceA, q64PlusS, this.Q64),
-				this.mulDiv(priceB, q64MinusS, this.Q64)
-			];
-		}
+		return reserveAPrice >= reserveBPrice
+			? [
+					this.mulDiv(priceA, q64MinusS, this.Q64),
+					this.mulDiv(priceB, q64PlusS, this.Q64),
+				]
+			: [
+					this.mulDiv(priceA, q64PlusS, this.Q64),
+					this.mulDiv(priceB, q64MinusS, this.Q64),
+				];
 	}
 
 	// Helper function to compute left numerator for complex formula
@@ -229,7 +272,7 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 		amountIn: bigint,
 		priceIn: bigint,
 		priceOut: bigint,
-		reserveOut: bigint
+		reserveOut: bigint,
 	): bigint {
 		return priceOut * reserveOut + priceIn * amountIn;
 	}
@@ -239,11 +282,15 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 		amountIn: bigint,
 		priceIn: bigint,
 		priceOut: bigint,
-		reserveOut: bigint
+		reserveOut: bigint,
 	): bigint {
-		const temp = this.mulDiv(amountIn, priceIn, this.Q64) > this.mulDiv(reserveOut, priceOut, this.Q64)
-			? this.mulDiv(amountIn, priceIn, this.Q64) - this.mulDiv(reserveOut, priceOut, this.Q64)
-			: this.mulDiv(reserveOut, priceOut, this.Q64) - this.mulDiv(amountIn, priceIn, this.Q64);
+		const temp =
+			this.mulDiv(amountIn, priceIn, this.Q64) >
+			this.mulDiv(reserveOut, priceOut, this.Q64)
+				? this.mulDiv(amountIn, priceIn, this.Q64) -
+					this.mulDiv(reserveOut, priceOut, this.Q64)
+				: this.mulDiv(reserveOut, priceOut, this.Q64) -
+					this.mulDiv(amountIn, priceIn, this.Q64);
 		return temp * temp;
 	}
 
@@ -253,9 +300,11 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 		priceIn: bigint,
 		priceOut: bigint,
 		reserveOut: bigint,
-		k: bigint
+		k: bigint,
 	): bigint {
-		return this.mulDiv(priceIn * priceOut, k, this.Q64 * this.Q64) * 
-			   this.mulDiv(reserveOut * amountIn, 2n, this.Q64);
+		return (
+			this.mulDiv(priceIn * priceOut, k, this.Q64 * this.Q64) *
+			this.mulDiv(reserveOut * amountIn, 2n, this.Q64)
+		);
 	}
 }
