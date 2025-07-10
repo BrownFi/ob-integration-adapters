@@ -6,6 +6,12 @@ export const FACTORY_ADDRESS: Address =
 export const ROUTER_ADDRESS: Address =
 	"0xa244C6d127Ec19689f0DEf715417736c7f6cf0C4";
 
+export const FACTORY_V2_ADDRESS: Address =
+	"0x43AB776770cC5c739adDf318Af712DD40918C42d";
+
+export const ROUTER_V2_ADDRESS: Address =
+	"0x3F0bBeEdEa5E5F63a14cBdA82718d4f25501fBeA";
+
 export const WETH: Address = "0x6969696969696969696969696969696969696969";
 
 export const PYTH_ADDRESS: Address =
