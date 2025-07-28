@@ -23,6 +23,31 @@ describe("BrownFiV2PoolMath", () => {
 		updateFeedData: "0x",
 	};
 
+	test("swapExactInput zeroToOne using real states", () => {
+		expect(
+			poolMath.swapExactInput(
+				{
+					address: zeroAddress,
+					token0: zeroAddress, // WBERA
+					token1: zeroAddress, // HONEY
+					token0Decimals: 18,
+					token1Decimals: 18,
+					reserve0: 589076828942029027976n,
+					reserve1: 1057535217754056644437n,
+					kappa: 18446744073709551n,
+					price0: 41440826941896492318n,
+					price1: 18432244932867615908n,
+					fee: 300000,
+					lambda: 92233720368547760n,
+					updateFee: 0n,
+					updateFeedData: "0x",
+				},
+				false,
+				500000000000000000n,
+			),
+		).toBe(221975679523428441n);
+	});
+
 	test("swapExactInput zeroToOne", () => {
 		expect(poolMath.swapExactInput(poolState, true, parseEther("10"))).toBe(
 			parseEther("18.140589569160997731"),

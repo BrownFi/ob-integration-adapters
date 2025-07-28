@@ -42,13 +42,18 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 		);
 
 		// Get prices with skewness adjustment
-		const [priceIn, priceOut] = this.getSkewnessPrice(
-			zeroToOne ? pool.price0 : pool.price1,
-			zeroToOne ? pool.price1 : pool.price0,
+		const [adjustedPrice0, adjustedPrice1] = this.getSkewnessPrice(
+			pool.price0,
+			pool.price1,
 			this.parseRawToDefaultDecimals(pool.token0Decimals, pool.reserve0),
 			this.parseRawToDefaultDecimals(pool.token1Decimals, pool.reserve1),
 			pool.lambda,
 		);
+
+		// Select prices based on swap direction
+		const [priceIn, priceOut] = zeroToOne
+			? [adjustedPrice0, adjustedPrice1]
+			: [adjustedPrice1, adjustedPrice0];
 
 		// Apply fee to amount in
 		const _amountIn = this.mulDiv(
@@ -141,13 +146,18 @@ export class BrownFiV2PoolMath extends BasePoolMath<BrownFiV2PoolState> {
 		);
 
 		// Get prices with skewness adjustment
-		const [priceIn, priceOut] = this.getSkewnessPrice(
-			zeroToOne ? pool.price0 : pool.price1,
-			zeroToOne ? pool.price1 : pool.price0,
+		const [adjustedPrice0, adjustedPrice1] = this.getSkewnessPrice(
+			pool.price0,
+			pool.price1,
 			this.parseRawToDefaultDecimals(pool.token0Decimals, pool.reserve0),
 			this.parseRawToDefaultDecimals(pool.token1Decimals, pool.reserve1),
 			pool.lambda,
 		);
+
+		// Select prices based on swap direction
+		const [priceIn, priceOut] = zeroToOne
+			? [adjustedPrice0, adjustedPrice1]
+			: [adjustedPrice1, adjustedPrice0];
 
 		// Calculate price impact: R = (K * dx) / (x - dx)
 		const priceImpact = this.mulDiv(
